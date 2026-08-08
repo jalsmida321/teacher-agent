@@ -13,6 +13,7 @@ import {
   HelpCircle,
   KeyRound,
   LoaderCircle,
+  Menu,
   MessagesSquare,
   NotebookPen,
   Plus,
@@ -150,6 +151,7 @@ export default function TeacherDeckPage() {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [preview, setPreview] = useState<{ name: string; content: string } | null>(null);
   const [toolCalls, setToolCalls] = useState<string[]>([]);
+  const [mobilePanel, setMobilePanel] = useState<"sidebar" | "usage" | null>(null);
   const chatEnd = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const typeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -401,6 +403,7 @@ export default function TeacherDeckPage() {
     setInput("");
     setAttachments([]);
     setUsage(null);
+    setMobilePanel(null);
   }
 
   function selectScenario(id: ScenarioId) {
@@ -410,6 +413,7 @@ export default function TeacherDeckPage() {
     setInput("");
     setAttachments([]);
     setUsage(null);
+    setMobilePanel(null);
   }
 
   /** 根据场景生成默认文件名 */
@@ -524,7 +528,17 @@ export default function TeacherDeckPage() {
 
   return (
     <main className="app-shell">
-      <aside className="sidebar">
+      {mobilePanel && (
+        <button
+          className="mobile-drawer-backdrop"
+          aria-label="关闭面板"
+          onClick={() => setMobilePanel(null)}
+        />
+      )}
+      <aside className={`sidebar ${mobilePanel === "sidebar" ? "mobile-open" : ""}`}>
+        <button className="mobile-drawer-close" aria-label="关闭任务菜单" onClick={() => setMobilePanel(null)}>
+          <X size={18} />
+        </button>
         <div className="brand">
           <div className="brand-mark"><GraduationCap size={19} /></div>
           <div><strong>师座</strong><span>教师 AI 工作台</span></div>
@@ -632,13 +646,29 @@ export default function TeacherDeckPage() {
 
       <section className="workspace">
         <header className="topbar">
-          <div>
+          <button
+            className="icon-btn mobile-panel-toggle"
+            aria-label="打开任务和设置"
+            aria-expanded={mobilePanel === "sidebar"}
+            onClick={() => setMobilePanel((panel) => panel === "sidebar" ? null : "sidebar")}
+          >
+            <Menu size={18} />
+          </button>
+          <div className="topbar-title">
             <p className="eyebrow">师座 · 教师 AI 工作台{activeTask ? " · 自定义任务" : ""}</p>
             <h1>{activeTitle}</h1>
           </div>
           <div className="topbar-actions">
             {model && <span className="status"><i />{model}</span>}
             {apiKey && <span className="status key-status"><CheckCircle2 size={12} />已连接</span>}
+            <button
+              className="icon-btn mobile-panel-toggle"
+              aria-label="打开用量记录"
+              aria-expanded={mobilePanel === "usage"}
+              onClick={() => setMobilePanel((panel) => panel === "usage" ? null : "usage")}
+            >
+              <Coins size={17} />
+            </button>
           </div>
         </header>
 
@@ -763,13 +793,16 @@ export default function TeacherDeckPage() {
         </div>
       </section>
 
-      <aside className="assistant-panel">
+      <aside className={`assistant-panel ${mobilePanel === "usage" ? "mobile-open" : ""}`}>
         <header className="assistant-header">
           <div className="assistant-title">
             <span><Coins size={18} /></span>
             <div><strong>用量记录</strong><small><i />仅本机保存</small></div>
           </div>
-          <button className="icon-btn" title="清空记录" onClick={() => setLog([])}><RefreshCcw size={17} /></button>
+          <div className="assistant-header-actions">
+            <button className="icon-btn" title="清空记录" onClick={() => setLog([])}><RefreshCcw size={17} /></button>
+            <button className="icon-btn mobile-drawer-close-inline" aria-label="关闭用量记录" onClick={() => setMobilePanel(null)}><X size={17} /></button>
+          </div>
         </header>
         <div className="chat-list">
           {log.length === 0 && <p className="empty-state">还没有生成记录。选一个场景开始吧。</p>}
