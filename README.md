@@ -1,87 +1,135 @@
-# 师座（TeacherDeck）· AI 教师工作台
+# 师座（TeacherDeck）· 教师自己的 AI 工作台
 
-基于 **Pi SDK**（`@earendil-works/pi-coding-agent`）和 **Next.js** 的教师 AI 工作台，
-专注教师场景，覆盖 **幼教、小学、初中、高中、职教、大学** 全学段。
+> 像 Codex 之于程序员，师座之于教师：填上你的 API Key，AI 帮你**批改作文、写期末评语、出试卷、做成绩分析、写教学反思、家校沟通**，成果可直接导出 Word / Excel / PDF。
 
-**主入口**：`http://127.0.0.1:30300/`（根路径自动跳转到主页面 `/billing-demo`）
+- 技术栈：**Next.js 16 + Pi SDK（`@earendil-works/pi-coding-agent`）+ React 19**
+- 覆盖学段：幼教、小学、初中、高中、职教、大学
+- 商业模式：**BYOK**（客户自带 api.sublyx.org Key，无自建支付）
 
-主页面 = 教师 AI 工作台：客户填入自己的 `api.sublyx.org` key 即可使用（BYOK，无自建支付）
+---
 
-## 商业模式：客户自带 Key（无自建支付）
-
-客户在 `api.sublyx.org` 注册 → 充值 → 令牌 → 新建 API key，填入本应用即可使用。
-**余额、扣费、账单全在中转站**，本应用不做任何支付/余额/流水，只做「壳 + 教师场景」。
-
-```
-教师浏览器 → 填自己的 key → /api/llm (场景模板) → api.sublyx.org/v1 (客户 key)
-                  └─ 返回内容 + usage(token 用量，仅展示)
-```
-
-| 文件 | 作用 |
-|------|------|
-| `lib/relay.ts` | 中转站直连封装（地址内置 `https://api.sublyx.org/v1`，支持客户 key 透传 + 模型列表拉取） |
-| `lib/scenarios.ts` | 6 个刚需场景的专业提示词模板（产品壁垒） |
-| `app/api/llm/route.ts` | 调用端点：场景 + 客户 key + 所选模型 → 中转站 → 返回内容 + usage |
-| `app/api/models/route.ts` | 客户 key 拉取可用模型列表（实测 10 个） |
-| `app/billing-demo/page.tsx` | 自带 Key 页面：填 key（存 localStorage）→ 自动加载模型下拉 → 选场景 → 调用 → 看 token 用量 |
-
-关键点：
-- key 只存在客户自己浏览器的 localStorage，后端不落盘、只透传
-- 中转站地址内置在 `lib/relay.ts` 的 `RELAY_BASE`，客户无需填
-- 实测：非流式调用必定返回准确 usage；流式（尤其带图）偶发缺失，故默认非流式 + 前端打字机效果
-- 中转站未暴露余额查询接口，余额/充值引导客户到中转站网页查看
-
-## 运行
+## 快速开始
 
 ```bash
 npm install --ignore-scripts
 npm run dev
 ```
 
-打开 http://127.0.0.1:30300
+打开 **http://127.0.0.1:30300/**（根路径自动跳转到主页面）
 
-应用默认读取 `~/.pi/agent` 中已有的 Pi 模型和认证配置。
-没有可用模型时，聊天接口会进入演示模式，其余功能仍可使用。
+> ⚠️ 注意：需在 `NODE_ENV=development` 下安装（生产模式 npm 会跳过 devDependencies 导致缺 typescript）。
+> 本机若 `NODE_ENV=production`，请先 `NODE_ENV=development npm install`。
 
-## 核心定制点（对照"专注教师 AI 场景"）
+### 使用三步
 
-| 定制点 | 实现位置 | 说明 |
-|--------|---------|------|
-| 教师系统提示词 | `app/api/chat/route.ts` → `buildSystemPrompt()` | 教师助手人格 + 当前学段/学科/年级/教材上下文 + 课标参考 |
-| 教学上下文 | `lib/teacher-data.ts` | 学段/学科/年级/教材版本数据 + 6 类任务模板 + 内置课标要点 |
-| 自定义工具 | `lib/teacher-tools.ts` | `curriculum_lookup`（课标查询）、`save_artifact`（保存成果到 artifacts/） |
-| 安全边界 | `app/api/chat/route.ts` → `tools: teacherToolNames` | 只开放两个自定义工具，**不暴露 bash / 读写文件** |
-| 教师 UI | `app/page.tsx` | 学段选择、学科/年级/教材下拉、任务模板卡片、成果工作区、对话面板 |
-| 计费场景 | `lib/scenarios.ts` + `app/api/llm/route.ts` | 6 个刚需场景模板 + 直连中转站 + 客户自带 Key |
+1. 左侧「连接 AI」填入你在 **api.sublyx.org** 创建的 Key（点「如何获取 Key」有直达链接引导）
+2. 选一个**工作场景**（内置 5 个）或**自定义任务**（自建提示词）
+3. 填内容 / 上传附件 → 「开始生成」→ 结果可预览、导出、保存
+
+---
+
+## 功能总览
+
+| 模块 | 说明 | 位置 |
+|------|------|------|
+| **场景工作台** | 5 个内置刚需场景（作文批改/期末评语/出题组卷/教学反思/家校沟通），每场景 = 专业提示词 | `lib/scenarios.ts` |
+| **自定义任务** | 用户自建任务（名称+提示词），持久化 localStorage，可编辑/删除；附 2 个教师示例 | `app/billing-demo/page.tsx` |
+| **附件上传** | 图片→视觉多模态；Word(.docx)/PDF/Excel(.xlsx)/文本→服务端解析喂模型 | `lib/file-parse.ts` |
+| **多格式导出** | 生成结果导出 Word(.docx)/Excel(.xlsx)/PDF/Markdown | `lib/export.ts` + `app/api/export/route.ts` |
+| **成果资料库** | 已保存成果列表、Markdown 预览、下载、删除 | `app/api/artifacts/route.ts` |
+| **模型选择** | 保存 Key 后自动拉取客户可用模型列表，下拉选择 | `app/api/models/route.ts` |
+| **用量展示** | 每次调用显示 token 用量（费用以平台账单为准） | `app/billing-demo/page.tsx` |
+
+---
 
 ## 系统架构
 
+生产通道走 **pi SDK（AgentSession）**：思考 + 工具调用 + 附件解析。
+
 ```
-浏览器（教师工作台 UI）
-  │  SSE 流式
+浏览器（教师工作台 /billing-demo）
+  │  multipart 上传 + SSE 流式
   ▼
-Next.js API route（/api/chat）
-  │  createAgentSession（Pi SDK）
+/api/llm（Next.js Node 运行时）
+  ├─ 附件解析（图片/Word/PDF/Excel/文本）
+  ├─ createPiSession（pi SDK）
+  │    ├─ 动态注册中转站 provider（客户 Key + 模型列表）
+  │    ├─ 场景/自定义提示词 → systemPromptOverride
+  │    ├─ 思考（thinkingLevel）+ 工具（curriculum_lookup / save_artifact）
+  │    └─ usage 提取（token 用量）
   ▼
-AgentSession（模型推理）
-  ├─ systemPromptOverride → 教师系统提示词
-  ├─ customTools → curriculum_lookup / save_artifact
-  └─ tools 白名单 → 仅自定义工具（无 bash/文件工具）
+api.sublyx.org（客户 Key）→ 上游模型（gpt-5.x / deepseek …）
 ```
 
-## 路线图：从 MVP 到完整产品
+### 关键文件
 
-- [x] **MVP**：教师工作台 + 学段/学科/年级上下文 + 教案/试卷/讲评/学情/家校/反思模板 + 成果保存
-- [x] **自带 Key 模式**：客户填自己的 api.sublyx.org key 即可用，中转站地址内置，无自建支付
-- [ ] **作文拍照批改**：接入视觉模型，`/api/llm` 已支持 imageDataUrl 图片输入（billing-demo 已可拍照上传）
-- [ ] **题库与试卷**：接入题目数据（或自建题库文件），支持按知识点/难度抽题组卷
-- [ ] **学情数据接入**：导入成绩表（Excel/CSV）→ 自动生成学情分析报告
-- [ ] **多学科模板**：为语文/英语/物理/艺术等学科定制专属教案与作业模板
-- [ ] **会话持久化**：用 `SessionManager.create(cwd)` 替换 in-memory，接入 pi 会话文件（可被 pi-web 读取）
-- [ ] **部署**：服务端 + 反向代理 + 用户体系（参考 pi-web 的 Basic Auth / 密码方案）
+| 文件 | 作用 |
+|------|------|
+| `lib/relay-session.ts` | **pi SDK 会话封装**：动态注册中转站 provider + AgentSession + 思考/工具/图片/usage |
+| `lib/relay.ts` | 中转站直连客户端（`RELAY_BASE` 内置、`listModels` 拉模型、`resolveApiKey` 客户 Key 透传） |
+| `lib/scenarios.ts` | 5 个刚需场景的专业提示词模板（产品壁垒） |
+| `lib/teacher-tools.ts` | 自定义 Pi 工具：`curriculum_lookup`（课标查询）、`save_artifact`（保存成果） |
+| `lib/file-parse.ts` | 附件解析：图片/Word/PDF/Excel/文本 → 可喂模型的内容 |
+| `lib/export.ts` | 成果导出：Markdown → docx / xlsx / pdf / md（内置楷体字体） |
+| `lib/paths.ts` | 路径配置：`ARTIFACTS_DIR`（成果目录，可用环境变量覆盖） |
+| `app/api/llm/route.ts` | 生产调用端点（multipart 上传 + SSE：思考/文本/工具/usage） |
+| `app/api/export/route.ts` | 导出端点（docx/xlsx/pdf/md 文件下载） |
+| `app/api/models/route.ts` | 客户 Key 拉取可用模型列表 |
+| `app/api/artifacts/route.ts` | 成果列表 / 内容预览 / 删除 |
+| `app/api/chat/route.ts` | ⚠️ 旧版开发调试通道（Pi AgentSession 全工具），生产不用 |
+| `app/billing-demo/page.tsx` | **主页面**：Key 管理 + 场景/自定义任务 + 输入/附件 + 生成 + 导出 + 成果库 |
+| `app/page.tsx` | 根路径 → 重定向到主页面 |
+
+---
+
+## 部署
+
+详见 **`docs/cloudflare-setup.md`** 与 **`deploy/`** 脚本。
+
+**重要**：师座**不能**部署到 Cloudflare Pages/Workers（pi SDK + 文件系统需要真实 Node 运行时）。
+正确组合：**Cloudflare 只做域名/DNS/HTTPS/CDN 门面，应用本体跑在海外 VPS（Node + PM2）**。
+
+```bash
+# 服务器上一键部署
+bash deploy/setup.sh https://github.com/<你>/shizuo.git shizuoai.com
+
+# 后续更新
+bash deploy/update.sh
+```
+
+| 部署项 | 说明 |
+|--------|------|
+| 环境变量 | `ARTIFACTS_DIR`（成果目录）、`SUBLYX_API_KEY`（可选，开发用）、`PORT`（默认 3000），见 `.env.example` |
+| 依赖 | Next.js 16 / Node 22+ / Pi SDK 0.84 / mammoth / pdf-parse / xlsx / docx / pdfkit |
+| 生产验证 | `npm run build` + `next start` 已实测通过（页面/API/导出全 200） |
+| 数据目录 | 成果存 `ARTIFACTS_DIR`（生产建议 `/var/data/shizuo/artifacts`，不随代码进 git） |
+
+---
+
+## 路线图
+
+- [x] **MVP**：5 场景 + 自定义任务 + BYOK + 附件解析 + 多格式导出 + 成果库
+- [x] **生产通道 pi SDK**：思考 + 工具调用 + 图片识别 + usage
+- [x] **部署改造**：路径环境变量化 + .gitignore + 一键部署脚本 + Cloudflare 接入文档
+- [ ] **成绩分析场景**（`analysis`，方案 A）：成绩 Excel → 学情报告（附件解析已就绪）
+- [ ] **作文拍照批改实测**（视觉模型 gpt-5.6-sol/terra 质量对比）
+- [ ] **题库与试卷**：接入题目数据，按知识点/难度抽题组卷
+- [ ] **会话持久化**：`SessionManager.create` 替换 in-memory（可被 pi-web 读取）
+- [ ] **多用户**：登录注册 + Key 绑定（加密存服务端）
+- [ ] **Electron 桌面版**：解锁「在文件浏览器中打开」（评估见 `docs/electron-eval.md`）
+
+---
+
+## 技术要点（实测）
+
+- **pi SDK 动态注册中转站**：每请求 `modelRuntime.registerProvider("relay", { baseUrl, apiKey: 客户Key, models })` + 等 refresh，模型/Key 请求私有互不污染
+- **注册模型必须带 cost**：缺 cost 时工具调用路径 `calculateCost` 访问 `model.cost.tiers` 崩溃
+- **图片格式**：pi 用 `{type:"image", data, mimeType}`（base64），不是 OpenAI 的 `image_url`
+- **PDF 中文**：内置楷体 `assets/fonts/kaiti.ttf`（跨平台部署可用），系统字体兜底；pdfkit 不支持 .ttc
+- **附件解析**：pdf-parse v2 用 `new PDFParse({data}).getText()` 类 API
 
 ## 复用参考
 
-- 本项目的模式来自 `../ai-project-assistant`（Pi SDK + Next.js + SSE + 演示模式）
-- 想要完整会话树、文件浏览、模型管理界面，可 fork `../pi-web-0.8.7`（路线 A）
+- 项目模式来自 `../ai-project-assistant`（Pi SDK + Next.js + SSE）
+- 界面参考 pi-web 布局（会话列表式自定义任务）
 - Pi SDK 文档：`node_modules/@earendil-works/pi-coding-agent/docs/sdk.md`
