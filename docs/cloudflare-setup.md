@@ -21,14 +21,14 @@ Cloudflare（DNS + SSL + CDN + 防攻击）
 
 ### 1. 买域名并托管到 Cloudflare
 
-- 推荐 `shizuoai.com`（已确认可注册）
+- 推荐 `teacherdeck.org`（已确认可注册）
 - 注册后把域名的 NS 记录改成 Cloudflare 分配的两个 NS（免费）
 
 ### 2. 部署应用到 VPS（先于 Cloudflare，保证源站可访问）
 
 ```bash
 ssh root@你的VPS
-bash deploy/setup.sh https://github.com/<你>/shizuo.git shizuoai.com
+bash deploy/setup.sh https://github.com/<你>/shizuo.git teacherdeck.org
 ```
 
 部署完成后先在 VPS 本机验证：`curl http://127.0.0.1:3000/billing-demo`
@@ -52,7 +52,7 @@ Cloudflare 控制台 → SSL/TLS → **Full (strict)**：
 
 ```bash
 # 在本地电脑
-curl -I https://shizuoai.com/billing-demo   # 应返回 200
+curl -I https://teacherdeck.org/billing-demo   # 应返回 200
 ```
 
 ## 可选加固

@@ -6,7 +6,7 @@
 # 用法：
 #   bash deploy/setup.sh <git仓库URL> [域名]
 # 示例：
-#   bash deploy/setup.sh https://github.com/you/shizuo.git shizuoai.com
+#   bash deploy/setup.sh https://github.com/you/shizuo.git teacherdeck.org
 #
 # 步骤：装 Node → 拉代码 → 装依赖 → 建成果目录 → 构建 → PM2 启动
 # ============================================================

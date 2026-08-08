@@ -91,7 +91,7 @@ api.sublyx.org（客户 Key）→ 上游模型（gpt-5.x / deepseek …）
 
 ```bash
 # 服务器上一键部署
-bash deploy/setup.sh https://github.com/<你>/shizuo.git shizuoai.com
+bash deploy/setup.sh https://github.com/<你>/shizuo.git teacherdeck.org
 
 # 后续更新
 bash deploy/update.sh

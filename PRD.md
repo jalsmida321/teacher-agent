@@ -588,18 +588,20 @@ teacher-agent/
 
 **已注册（不可用）**：shizuo.ai / .cc / .dev / .com / .cn / .app；teacherdeck.com / .ai
 
-**未注册（可用）**：
+### ✅ 域名已定：teacherdeck.org（2026-08-08 拍板）
 
-| 域名 | 建议 |
-|------|------|
-| **shizuoai.com** | ⭐ 首选（师座AI，.com 最通用） |
-| **shizuoai.cc** | 备选（.cc 便宜，国内认识度高） |
-| **getshizuo.com** | 备选（工具类产品常见前缀） |
-| shizuo.work | 备选（工作台意象契合） |
-| shizuo.tech / .live / .club | 备选 |
-| shizuoai.cn | 备选（需备案，与免备案部署冲突，暂缓） |
+> 产品英文名 TeacherDeck → 域名 `teacherdeck.org`（已注册使用）。
+> 与品牌一致（TeacherDeck = 教师的 AI 工作台），免备案部署于海外 VPS + Cloudflare。
 
-> 建议尽快注册 **shizuoai.com**（约 ¥50-80/年），同时可顺手拿下 shizuo.work 防抢注。
+| 项 | 值 |
+|----|-----|
+| 正式域名 | **teacherdeck.org** |
+| DNS | Cloudflare 托管 |
+| 用途 | 师座 Web 产品主入口（https://teacherdeck.org） |
+
+**落点**：`docs/cloudflare-setup.md`（接入步骤）、`deploy/setup.sh`（部署示例）、`README.md`。
+
+> 候选域名记录（备查）：shizuoai.com / shizuoai.cc / getshizuo.com / shizuo.work / shizuo.tech 等曾为可用备选，已弃用。
 
 ---
 
