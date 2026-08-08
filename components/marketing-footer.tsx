@@ -16,7 +16,7 @@ export function MarketingFooter() {
       <div>
         <strong>开始使用</strong>
         <Link href="/workspace">打开工作台</Link>
-        <a href="https://api.sublyx.org/token" target="_blank" rel="noreferrer">创建 AI 服务 Key</a>
+        <a href="https://api.sublyx.org/keys" target="_blank" rel="noreferrer">创建 AI 服务 Key</a>
       </div>
       <p>AI 生成内容仅作为教师工作初稿，请结合学情与教学规范复核后使用。</p>
     </footer>

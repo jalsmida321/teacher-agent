@@ -28,7 +28,7 @@ import remarkGfm from "remark-gfm";
 import { SCENARIOS, SCENARIO_ORDER, type ScenarioId } from "@/lib/scenarios";
 
 const RELAY_WEB_URL = "https://api.sublyx.org";
-const RELAY_TOKEN_URL = "https://api.sublyx.org/token";
+const RELAY_TOKEN_URL = "https://api.sublyx.org/keys";
 
 type UsageLogItem = {
   time: string;
