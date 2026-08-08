@@ -69,3 +69,25 @@ curl -I https://teacherdeck.org/billing-demo   # 应返回 200
 | 证书不生效 | SSL/TLS 模式改为 Full 或 Full(strict)，等 1-5 分钟 |
 | 教师访问慢 | VPS 选新加坡/日本节点；Cloudflare 自动选就近边缘 |
 | 成果数据丢失 | 确认 `ARTIFACTS_DIR=/var/data/shizuo/artifacts`（VPS 上），定期备份该目录 |
+
+## 部署前置检查清单（VPS 上）
+
+1. **pi 配置目录**（pi SDK 初始化需要，缺省也不报错，但建议创建）：
+   ```bash
+   mkdir -p ~/.pi/agent
+   # 可放一个空的 settings.json，避免任何警告
+   echo '{}' > ~/.pi/agent/settings.json
+   ```
+2. **环境变量**（推荐写入 `/etc/environment` 或 PM2 ecosystem）：
+   ```
+   ARTIFACTS_DIR=/var/data/shizuo/artifacts
+   SUBLYX_API_KEY=   # 可选，仅开发/调试默认 key；生产 BYOK 客户自带
+   PORT=3000
+   ```
+3. **成果目录可写**：`/var/data/shizuo/artifacts` 属主为运行用户
+4. **防火墙**：`ufw allow 3000/tcp`（或仅允许 Cloudflare IP 段）
+5. **验证顺序**：
+   ```bash
+   curl -s http://127.0.0.1:3000/            # 307 跳转
+   curl -s http://127.0.0.1:3000/api/models -X POST -H 'Content-Type: application/json' -d '{"apiKey":"sk-测试"}'  # 能到中转站（会 502 或返回模型列表，取决于 key）
+   ```
