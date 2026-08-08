@@ -68,7 +68,7 @@ fi
 export ARTIFACTS_DIR="$DATA_DIR/artifacts"
 
 pm2 delete shizuo 2>/dev/null || true
-# 明确绑定 127.0.0.1：端口不对公网开放，由 Cloudflare 回源/反代接入
+# 明确绑定 127.0.0.1：应用端口不对公网开放，由本机 Nginx 按域名反向代理
 pm2 start npm --name shizuo -- start -- -H 127.0.0.1 -p "$PORT"
 pm2 save
 pm2 startup systemd -u root --hp /root || true

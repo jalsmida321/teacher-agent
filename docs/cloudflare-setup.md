@@ -1,93 +1,129 @@
 # Cloudflare 接入指南（师座 · 海外 VPS）
 
-> 师座**不能**部署到 Cloudflare Pages/Workers（pi SDK 需要真实文件系统）。
-> 正确做法：**Cloudflare 只做域名/DNS/HTTPS/CDN 门面**，应用本体跑在海外 VPS 的 Node 上。
+> 师座不能部署到 Cloudflare Pages/Workers：Pi SDK 与成果文件需要完整 Node.js 运行时和持久文件系统。
+> 推荐架构：应用跑在 VPS 的本地端口，Nginx 按域名反向代理，Cloudflare 提供 DNS、HTTPS、CDN 与基础防护。
 
 ## 架构
 
-```
+```text
 教师浏览器
-   │ HTTPS（Cloudflare 免费证书）
+   │ HTTPS
    ▼
-Cloudflare（DNS + SSL + CDN + 防攻击）
-   ▼ 代理到源站
-海外 VPS（Node.js + PM2, 端口 3000）
-   ├─ /api/llm    （pi SDK + 中转站）
-   ├─ /api/export （Word/Excel/PDF 导出）
-   └─ /api/artifacts（成果存取）
+Cloudflare（可选橙云代理）
+   ▼ HTTPS
+VPS Nginx :443（按 server_name 分流）
+   ▼ HTTP 127.0.0.1:13000
+师座 Next.js + PM2
 ```
 
-## 步骤
+同一个 VPS 公网 IP 可以服务多个域名，Nginx 根据域名分别转发到不同应用端口。
 
-### 1. 买域名并托管到 Cloudflare
+## 一、DNS
 
-- 推荐 `teacherdeck.org`（已确认可注册）
-- 注册后把域名的 NS 记录改成 Cloudflare 分配的两个 NS（免费）
+在 `teacherdeck.org` 当前 DNS 平台添加：
 
-### 2. 部署应用到 VPS（先于 Cloudflare，保证源站可访问）
+| 类型 | 名称 | 内容 |
+|------|------|------|
+| A | `@` | VPS 公网 IP |
+| CNAME | `www` | `teacherdeck.org` |
+
+初次部署建议使用「仅 DNS（灰云）」，便于验证源站和申请 Let's Encrypt 证书。完成后可切换为 Cloudflare「已代理（橙云）」。
+
+## 二、部署应用
+
+完整命令和 Nginx 配置见 `docs/deploy-single-port.md`。
+
+当前规划端口：
 
 ```bash
-ssh root@你的VPS
-bash deploy/setup.sh https://github.com/<你>/shizuo.git teacherdeck.org
+PORT=13000 bash deploy/setup.sh \
+  https://github.com/jalsmida321/teacher-agent.git teacherdeck.org
 ```
 
-部署完成后先在 VPS 本机验证：`curl http://127.0.0.1:3000/billing-demo`
+应用只监听 `127.0.0.1:13000`，无需在防火墙开放 13000。
 
-### 3. Cloudflare DNS 配置
+## 三、Nginx
 
-| 类型 | 名称 | 内容 | 代理 |
-|------|------|------|------|
-| A | `@` | VPS 公网 IP | 橙色云朵（开启代理） |
-| A | `www` | VPS 公网 IP | 橙色云朵 |
+Nginx 必须按域名反代：
 
-### 4. SSL 设置
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name teacherdeck.org www.teacherdeck.org;
 
-Cloudflare 控制台 → SSL/TLS → **Full (strict)**：
-- 自动签发给源站的证书
-- 浏览器 ↔ Cloudflare、Cloudflare ↔ VPS 全 HTTPS
+    client_max_body_size 25m;
 
-（若 VPS 没配 HTTPS，选 **Full** 即可；Cloudflare 会自动终止 TLS 再回源）
+    location / {
+        proxy_pass http://127.0.0.1:13000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 300s;
+    }
+}
+```
 
-### 5. 验证
+`proxy_buffering off` 是 AI 流式输出正常工作的必要设置。
+
+## 四、HTTPS
+
+先为 Nginx 配置源站证书：
 
 ```bash
-# 在本地电脑
-curl -I https://teacherdeck.org/billing-demo   # 应返回 200
+apt-get install -y certbot python3-certbot-nginx
+certbot --nginx -d teacherdeck.org -d www.teacherdeck.org
 ```
 
-## 可选加固
+证书生效后，可开启 Cloudflare 橙云代理，并设置：
 
-- **WAF**：Cloudflare 免费防火墙 → 开启「Bot Fight Mode」
-- **限速**：对 `/api/llm` 设置 Rate Limiting（防滥用，BYOK 场景 key 在客户端，主要防爬）
-- **缓存**：静态资源（`/_next/static/*`）设 Cache Everything，动态 API 不缓存
+```text
+Cloudflare → SSL/TLS → 概述 → 完全（严格）
+```
 
-## 常见问题
+注意：
 
-| 问题 | 解决 |
-|------|------|
-| 源站 502（Cloudflare 连不上 VPS） | 检查 VPS 防火墙：`ufw allow 3000`；确认 PM2 在跑 `pm2 status` |
-| 证书不生效 | SSL/TLS 模式改为 Full 或 Full(strict)，等 1-5 分钟 |
-| 教师访问慢 | VPS 选新加坡/日本节点；Cloudflare 自动选就近边缘 |
-| 成果数据丢失 | 确认 `ARTIFACTS_DIR=/var/data/shizuo/artifacts`（VPS 上），定期备份该目录 |
+- **Full / 完全并不表示可以回源到纯 HTTP。** Full 与 Full (strict) 都使用 HTTPS 回源；strict 额外验证源站证书。
+- 不建议使用 Flexible / 灵活，它会用 HTTP 回源，容易造成重定向循环并降低安全性。
+- 如果暂时不使用 Cloudflare 橙云，Let's Encrypt + Nginx 本身已经能提供正常 HTTPS。
 
-## 部署前置检查清单（VPS 上）
+## 五、验证
 
-1. **pi 配置目录**（pi SDK 初始化需要，缺省也不报错，但建议创建）：
-   ```bash
-   mkdir -p ~/.pi/agent
-   # 可放一个空的 settings.json，避免任何警告
-   echo '{}' > ~/.pi/agent/settings.json
-   ```
-2. **环境变量**（推荐写入 `/etc/environment` 或 PM2 ecosystem）：
-   ```
-   ARTIFACTS_DIR=/var/data/shizuo/artifacts
-   SUBLYX_API_KEY=   # 可选，仅开发/调试默认 key；生产 BYOK 客户自带
-   PORT=3000
-   ```
-3. **成果目录可写**：`/var/data/shizuo/artifacts` 属主为运行用户
-4. **防火墙**：`ufw allow 3000/tcp`（或仅允许 Cloudflare IP 段）
-5. **验证顺序**：
-   ```bash
-   curl -s http://127.0.0.1:3000/            # 307 跳转
-   curl -s http://127.0.0.1:3000/api/models -X POST -H 'Content-Type: application/json' -d '{"apiKey":"sk-测试"}'  # 能到中转站（会 502 或返回模型列表，取决于 key）
-   ```
+```bash
+curl -I https://teacherdeck.org/
+curl -I https://www.teacherdeck.org/
+curl -I -H 'Host: teacherdeck.org' http://127.0.0.1/
+```
+
+## 六、部署前检查
+
+```bash
+mkdir -p ~/.pi/agent
+printf '{}\n' > ~/.pi/agent/settings.json
+mkdir -p /var/data/shizuo/artifacts
+
+ss -tlnp | grep ':13000'
+pm2 status
+curl -I http://127.0.0.1:13000/
+nginx -t
+```
+
+环境变量：
+
+```text
+ARTIFACTS_DIR=/var/data/shizuo/artifacts
+PORT=13000
+SUBLYX_API_KEY=   # 可选；生产用户默认使用自己的 Key
+```
+
+## 七、可选加固
+
+- Cloudflare WAF / Bot Fight Mode。
+- 对 `/api/llm`、`/api/models` 设置合理限速。
+- 静态资源可缓存；`/api/*` 和 SSE 响应不缓存。
+- 定期备份 `/var/data/shizuo/artifacts`。
+- 13000 只监听 `127.0.0.1`，不要直接开放公网。
