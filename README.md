@@ -33,12 +33,12 @@ npm run dev
 | 模块 | 说明 | 位置 |
 |------|------|------|
 | **场景工作台** | 5 个内置刚需场景（作文批改/期末评语/出题组卷/教学反思/家校沟通），每场景 = 专业提示词 | `lib/scenarios.ts` |
-| **自定义任务** | 用户自建任务（名称+提示词），持久化 localStorage，可编辑/删除；附 2 个教师示例 | `app/billing-demo/page.tsx` |
+| **自定义任务** | 用户自建任务（名称+提示词），持久化 localStorage，可编辑/删除；附 2 个教师示例 | `app/workspace/page.tsx` |
 | **附件上传** | 图片→视觉多模态；Word(.docx)/PDF/Excel(.xlsx)/文本→服务端解析喂模型 | `lib/file-parse.ts` |
 | **多格式导出** | 生成结果导出 Word(.docx)/Excel(.xlsx)/PDF/Markdown | `lib/export.ts` + `app/api/export/route.ts` |
 | **成果资料库** | 已保存成果列表、Markdown 预览、下载、删除 | `app/api/artifacts/route.ts` |
 | **模型选择** | 保存 Key 后自动拉取客户可用模型列表，下拉选择 | `app/api/models/route.ts` |
-| **用量展示** | 每次调用显示 token 用量（费用以平台账单为准） | `app/billing-demo/page.tsx` |
+| **用量展示** | 每次调用显示 token 用量（费用以平台账单为准） | `app/workspace/page.tsx` |
 
 ---
 
@@ -47,7 +47,7 @@ npm run dev
 生产通道走 **pi SDK（AgentSession）**：思考 + 工具调用 + 附件解析。
 
 ```
-浏览器（教师工作台 /billing-demo）
+浏览器（公开内容首页 /；教师工作台 /workspace）
   │  multipart 上传 + SSE 流式
   ▼
 /api/llm（Next.js Node 运行时）
@@ -77,8 +77,10 @@ api.sublyx.org（客户 Key）→ 上游模型（gpt-5.x / deepseek …）
 | `app/api/models/route.ts` | 客户 Key 拉取可用模型列表 |
 | `app/api/artifacts/route.ts` | 成果列表 / 内容预览 / 删除 |
 | `app/api/chat/route.ts` | ⚠️ 旧版开发调试通道（Pi AgentSession 全工具），生产不用 |
-| `app/billing-demo/page.tsx` | **主页面**：Key 管理 + 场景/自定义任务 + 输入/附件 + 生成 + 导出 + 成果库 |
-| `app/page.tsx` | 根路径 → 重定向到主页面 |
+| `app/workspace/page.tsx` | **主页面**：Key 管理 + 场景/自定义任务 + 输入/附件 + 生成 + 导出 + 成果库 |
+| `app/tools/[slug]/page.tsx` | 5 个可索引的教师场景着陆页（独立 TDK、FAQ、结构化数据） |
+| `app/robots.ts` / `app/sitemap.ts` | 搜索引擎抓取与索引清单；工作台和 API 明确禁止索引 |
+| `app/page.tsx` | 可索引的产品首页：5 个教师场景、使用流程、FAQ 与工作台入口 |
 
 ---
 

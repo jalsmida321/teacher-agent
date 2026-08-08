@@ -71,7 +71,7 @@ export async function listModels(opts: { apiKey?: string; signal?: AbortSignal }
   });
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
+    await response.body?.cancel();
     throw new Error(`AI 服务返回错误（${response.status}），请稍后重试`);
   }
 
@@ -109,7 +109,7 @@ export async function chatCompletion(
   });
 
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
+    await response.body?.cancel();
     // 上游 502/503 通常是该模型暂不可用，给出可读提示
     if (response.status >= 500) {
       throw new Error(`模型 ${opts.model ?? RELAY_MODEL} 上游暂时不可用（HTTP ${response.status}），请换一个模型试试`);
@@ -158,7 +158,7 @@ export async function* streamChat(
   });
 
   if (!response.ok || !response.body) {
-    const text = await response.text().catch(() => "");
+    await response.body?.cancel();
     throw new Error(`AI 服务返回错误（${response.status}），请稍后重试`);
   }
 

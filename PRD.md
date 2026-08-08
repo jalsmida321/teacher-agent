@@ -188,7 +188,7 @@
 | 位置 | 改动 |
 |------|------|
 | `lib/scenarios.ts` | 新增 `analysis` 场景 + `comment` 场景增强提示词（表格输入引导） |
-| `app/billing-demo/page.tsx` | 场景列表加“成绩分析”；评语场景显示表格模板引导；输入区支持粘贴 |
+| `app/workspace/page.tsx` | 场景列表加“成绩分析”；评语场景显示表格模板引导；输入区支持粘贴 |
 | `app/api/llm/route.ts` | 无改动（场景由 `scenarios.ts` 驱动） |
 | 前端解析 | 二期：`analysis` 支持上传 Excel/CSV（需引入解析库，MVP 先文本粘贴） |
 
@@ -327,7 +327,7 @@ api.sublyx.org（自有中转站，new-api 类，OpenAI 兼容）
 | 附件解析库 | `lib/file-parse.ts` | 图片/Word/PDF/Excel/文本 → 可喂模型的内容 |
 | 导出库 | `lib/export.ts` | Markdown → docx / xlsx / pdf / md（内置楷体字体） |
 | 模型列表端点 | `app/api/models/route.ts` | 客户 key 透传 `/v1/models`，返回可用模型 + 默认模型 |
-| 自带Key页面 | `app/billing-demo/page.tsx` | Key 输入（localStorage）+ 模型下拉 + 场景选择 + 输入/图片 + 打字机 + 思考/工具展示 + 用量 |
+| 自带Key页面 | `app/workspace/page.tsx` | Key 输入（localStorage）+ 模型下拉 + 场景选择 + 输入/图片 + 打字机 + 思考/工具展示 + 用量 |
 | 教师工作台 | `app/page.tsx` + `app/api/chat` | 开发调试通道：Pi AgentSession + 自定义工具（课标查询/保存成果） |
 | 教学数据 | `lib/teacher-data.ts` | 学段/学科/年级/教材 + 任务模板 + 内置课标要点 |
 
@@ -534,7 +534,9 @@ teacher-agent/
 ├── PRD.md                     # 本文档
 ├── app/
 │   ├── page.tsx               # 教师工作台（Pi AgentSession 调试通道）
-│   ├── billing-demo/page.tsx  # 自带 Key 页面（生产通道）
+│   ├── page.tsx               # 可索引产品首页
+│   ├── tools/[slug]/page.tsx  # 5 个场景着陆页
+│   ├── workspace/page.tsx     # 自带 Key 工作台（生产通道）
 │   ├── layout.tsx             # 元数据
 │   ├── globals.css            # 样式
 │   └── api/
@@ -553,11 +555,11 @@ teacher-agent/
 └── package.json               # Next.js 16.3 / React 19.2 / pi-coding-agent 0.84
 ```
 
-**运行**：`npm run dev` → http://127.0.0.1:30300/billing-demo（自带 Key 页）
+**运行**：`npm run dev` → http://127.0.0.1:30300/（产品首页）；工作台入口为 /workspace
 
 **方案 A 待实现清单**（见 §5A）：
 - [ ] `lib/scenarios.ts` 新增 `analysis` 场景提示词
-- [ ] `app/billing-demo/page.tsx` 场景入口加“成绩分析” + 评语表格模板引导
+- [ ] `app/workspace/page.tsx` 场景入口加“成绩分析” + 评语表格模板引导
 - [ ] 前端成绩文本规范化（粘贴 → 结构）
 - [ ] （二期）Excel/CSV 上传解析
 

@@ -64,7 +64,7 @@ export async function fetchRelayModels(apiKey: string): Promise<string[]> {
  * 每个请求独立创建：客户 Key、模型、工具都是该请求私有的，互不污染。
  */
 export async function createPiSession(opts: PiSessionOptions): Promise<PiSessionHandle> {
-  const { apiKey, model, systemPrompt, images, thinkingLevel = "medium" } = opts;
+  const { apiKey, model, systemPrompt, thinkingLevel = "medium" } = opts;
 
   const modelRuntime = await ModelRuntime.create();
 

@@ -17,7 +17,7 @@
  */
 import { SCENARIOS, type ScenarioId } from "@/lib/scenarios";
 import { RELAY_MODEL } from "@/lib/relay";
-import { createPiSession, getSessionUsage, parseImageDataUrl, pipeSessionEvents } from "@/lib/relay-session";
+import { createPiSession, getSessionUsage, pipeSessionEvents } from "@/lib/relay-session";
 import { isImageFile, parseUpload } from "@/lib/file-parse";
 
 export const runtime = "nodejs";
