@@ -3,9 +3,9 @@
 基于 **Pi SDK**（`@earendil-works/pi-coding-agent`）和 **Next.js** 的教师 AI 工作台，
 专注教师场景，覆盖 **幼教、小学、初中、高中、职教、大学** 全学段。
 
-包含两套通道：
-- **/（教师工作台）**：走 pi AgentSession，用于开发调试、工具编排
-- **/billing-demo（教师AI · 自带 Key）**：客户填入自己的 `api.sublyx.org` key 即可使用，无自建支付
+**主入口**：`http://127.0.0.1:30300/`（根路径自动跳转到主页面 `/billing-demo`）
+
+主页面 = 教师 AI 工作台：客户填入自己的 `api.sublyx.org` key 即可使用（BYOK，无自建支付）
 
 ## 商业模式：客户自带 Key（无自建支付）
 
