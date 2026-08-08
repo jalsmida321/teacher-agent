@@ -1,0 +1,30 @@
+# 依赖
+node_modules/
+
+# 构建产物
+.next/
+out/
+dist/
+
+# 用户数据（成果目录）—— 生产环境通过 ARTIFACTS_DIR 指向外部目录
+artifacts/*
+!artifacts/.gitkeep
+artifacts/.gitkeep
+
+# 环境变量（含中转站 Key）
+.env
+.env.local
+.env*.local
+.env.production
+
+# 本地 pi 配置（含中转站 Key）
+.pi/
+~/.pi/
+
+# 类型检查缓存
+*.tsbuildinfo
+
+# 日志 / 临时
+*.log
+.DS_Store
+Thumbs.db
