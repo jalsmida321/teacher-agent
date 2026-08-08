@@ -300,8 +300,8 @@ button { color: inherit; }
 .preview-body th, .preview-body td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; font-size: 11px; }
 .preview-body pre { background: #f6f7f5; padding: 10px; border-radius: 5px; overflow: auto; }
 .preview-body code { padding: 1px 5px; border-radius: 3px; background: #f0f2f0; font-size: 11px; }
-.guide-cta { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px; border-radius: 5px; background: var(--green); color: white; font-size: 10px; font-weight: 650; text-decoration: none; }
-.guide-cta:hover { background: #14563d; }
+.guide-cta, .key-guide a.guide-cta { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 8px; border-radius: 5px; background: var(--green); color: white; font-size: 10px; font-weight: 650; text-decoration: none; }
+.guide-cta:hover, .key-guide a.guide-cta:hover { background: #14563d; color: white; }
 .attachment-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .attachment-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-muted); color: var(--muted); font-size: 10px; }
 .attachment-chip button { display: grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--dim); cursor: pointer; }
