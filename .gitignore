@@ -28,3 +28,6 @@ artifacts/.gitkeep
 *.log
 .DS_Store
 Thumbs.db
+
+# 开发遗留的无主成果（迁移前的旧数据，不随仓库分发）
+artifacts/.legacy/

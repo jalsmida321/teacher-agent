@@ -21,8 +21,9 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { RELAY_BASE } from "./relay";
-import { teacherTools, teacherToolNames } from "./teacher-tools";
+import { curriculumLookupTool, createSaveArtifactTool, teacherToolNames } from "./teacher-tools";
 import { APP_ROOT } from "./paths";
+import { keyToUserId } from "./auth";
 
 export type PiSessionOptions = {
   apiKey: string;
@@ -112,6 +113,10 @@ export async function createPiSession(opts: PiSessionOptions): Promise<PiSession
   });
   await loader.reload();
 
+  // 按用户隔离：save_artifact 写入 ARTIFACTS_DIR/<keyhash>/（客户 key 哈希，不落盘原文）
+  const userId = keyToUserId(apiKey);
+  const userTools = [curriculumLookupTool, createSaveArtifactTool(userId)];
+
   const { session } = await createAgentSession({
     modelRuntime,
     model: resolvedModel,
@@ -121,7 +126,7 @@ export async function createPiSession(opts: PiSessionOptions): Promise<PiSession
     sessionManager: SessionManager.inMemory(APP_ROOT),
     // 安全边界：只开放自定义教师工具，不暴露 bash/读写文件
     tools: teacherToolNames,
-    customTools: teacherTools,
+    customTools: userTools,
   });
 
   return {

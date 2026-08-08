@@ -120,6 +120,15 @@ bash deploy/update.sh
 
 ---
 
+## 安全设计（上线前已修复）
+
+| 风险 | 修复 |
+|------|------|
+| **无登录/数据隔离** | 成果按 API Key 哈希隔离：`ARTIFACTS_DIR/<keyhash>/`；`/api/artifacts` 需 `Authorization: Bearer <key>`，用户间互不可见 |
+| **API Key 进访问日志** | 模型列表/成果接口改用 POST body 或 Authorization header（不再用 `?apiKey=` query，避免 Nginx/CF 日志泄露） |
+| **xlsx 高危漏洞** | 升级 `xlsx@0.20.3`（SheetJS CDN 修复版，0 漏洞）；单成果文件 1MB 上限 |
+| Key 原文 | 服务端不落盘，仅存 SHA-256 哈希用于目录命名 |
+
 ## 技术要点（实测）
 
 - **pi SDK 动态注册中转站**：每请求 `modelRuntime.registerProvider("relay", { baseUrl, apiKey: 客户Key, models })` + 等 refresh，模型/Key 请求私有互不污染

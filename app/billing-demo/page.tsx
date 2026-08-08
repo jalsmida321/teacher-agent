@@ -198,7 +198,7 @@ export default function TeacherDeckPage() {
       localStorage.setItem(TASKS_STORAGE, JSON.stringify(DEFAULT_TASKS));
     }
     if (savedKey) void loadModels(savedKey);
-    void loadArtifacts();
+    void loadArtifacts(savedKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -214,7 +214,12 @@ export default function TeacherDeckPage() {
     setModelsLoading(true);
     setModelsError("");
     try {
-      const response = await fetch(`/api/models?apiKey=${encodeURIComponent(trimmed)}`);
+      // POST + body：避免 API Key 进访问日志（GET query 会被 Nginx/CF 记录）
+      const response = await fetch("/api/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: trimmed }),
+      });
       const data = (await response.json()) as { models?: string[]; default?: string; error?: string };
       if (!response.ok || !data.models) throw new Error(data.error ?? `请求失败：${response.status}`);
       setModels(data.models);
@@ -230,9 +235,14 @@ export default function TeacherDeckPage() {
     }
   }
 
-  async function loadArtifacts() {
+  async function loadArtifacts(keyOverride?: string) {
+    const key = (keyOverride ?? apiKey).trim();
+    if (!key) return;
     try {
-      const response = await fetch("/api/artifacts");
+      // GET + Authorization header：key 不进 URL/访问日志，且按用户隔离
+      const response = await fetch("/api/artifacts", {
+        headers: { Authorization: `Bearer ${key}` },
+      });
       if (response.ok) {
         const data = (await response.json()) as { files: Artifact[] };
         setArtifacts(data.files);
@@ -243,8 +253,12 @@ export default function TeacherDeckPage() {
   }
 
   async function previewArtifact(name: string) {
+    const key = apiKey.trim();
+    if (!key) return;
     try {
-      const response = await fetch(`/api/artifacts?name=${encodeURIComponent(name)}`);
+      const response = await fetch(`/api/artifacts?name=${encodeURIComponent(name)}`, {
+        headers: { Authorization: `Bearer ${key}` },
+      });
       if (response.ok) {
         const data = (await response.json()) as { name: string; content: string };
         setPreview(data);
@@ -255,8 +269,13 @@ export default function TeacherDeckPage() {
   }
 
   async function deleteArtifact(name: string) {
+    const key = apiKey.trim();
+    if (!key) return;
     try {
-      await fetch(`/api/artifacts?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+      await fetch(`/api/artifacts?name=${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${key}` },
+      });
       setPreview(null);
       void loadArtifacts();
     } catch {
@@ -742,7 +761,6 @@ export default function TeacherDeckPage() {
                     </button>
                     <div className="artifact-actions">
                       <button className="icon-btn" title="预览" onClick={() => void previewArtifact(artifact.name)}><Eye size={14} /></button>
-                      <button className="icon-btn" title="下载" onClick={() => void downloadArtifact(artifact.name)}><Download size={14} /></button>
                       <button className="icon-btn danger" title="删除" onClick={() => void deleteArtifact(artifact.name)}><Trash2 size={14} /></button>
                     </div>
                   </article>
@@ -844,17 +862,4 @@ export default function TeacherDeckPage() {
       )}
     </main>
   );
-}
-
-/** 下载已保存的成果文件 */
-async function downloadArtifact(name: string) {
-  try {
-    const response = await fetch(`/api/artifacts?name=${encodeURIComponent(name)}`);
-    if (response.ok) {
-      const data = (await response.json()) as { content: string };
-      downloadText(name, data.content);
-    }
-  } catch {
-    // 忽略
-  }
 }
